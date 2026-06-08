@@ -7,7 +7,7 @@ const asciiCtx = asciiCanvas.getContext('2d');
 const overlay = document.getElementById('overlay');
 const startBtn = document.getElementById('startBtn');
 const uploadBtn = document.getElementById('uploadBtn');
-const videoUpload = document.getElementById('videoUpload');
+const mediaUpload = document.getElementById('mediaUpload');
 const controls = document.getElementById('controls');
 const toggleControls = document.getElementById('toggleControls');
 const resolutionInput = document.getElementById('resolution');
@@ -20,7 +20,7 @@ const stopBtn = document.getElementById('stopBtn');
 
 const charsets = {
   standard: ' .:-=+*#%@',
-  detailed: " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
+  detailed: " .'`^\"\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
   blocks: ' ░▒▓█',
   binary: ' 01'
 };
@@ -28,7 +28,8 @@ const charsets = {
 let stream = null;
 let animationId = null;
 let facingMode = 'environment';
-let isVideoFile = false;
+let isPhoto = false;
+let photoImage = null;
 let controlsVisible = true;
 
 function resizeOutput() {
@@ -50,27 +51,30 @@ async function startCamera() {
     if (stream) {
       stream.getTracks().forEach(t => t.stop());
     }
-    isVideoFile = false;
+    isPhoto = false;
+    photoImage = null;
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
     });
     video.srcObject = stream;
+    video.src = '';
     await video.play();
-    startRender();
+    showInterface();
+    renderLoop();
   } catch (err) {
     alert('Camera access denied or not available: ' + err.message);
   }
 }
 
-function startRender() {
+function showInterface() {
   overlay.classList.add('hidden');
   controls.classList.remove('hidden');
   toggleControls.classList.remove('hidden');
-  renderLoop();
 }
 
 function stopRender() {
   if (animationId) cancelAnimationFrame(animationId);
+  animationId = null;
   if (stream) {
     stream.getTracks().forEach(t => t.stop());
     stream = null;
@@ -78,6 +82,8 @@ function stopRender() {
   video.pause();
   video.srcObject = null;
   video.src = '';
+  isPhoto = false;
+  photoImage = null;
   overlay.classList.remove('hidden');
   controls.classList.add('hidden');
   toggleControls.classList.add('hidden');
@@ -88,29 +94,25 @@ function getCharIndex(brightness, max) {
   return Math.floor((brightness / 255) * (max - 1));
 }
 
-function renderLoop() {
-  if (video.paused || video.ended) {
-    animationId = requestAnimationFrame(renderLoop);
-    return;
-  }
-
+function renderAscii(source) {
   const cols = parseInt(resolutionInput.value, 10);
   const charSet = charsets[charsetSelect.value];
   const colorMode = colorModeSelect.value;
 
-  const vWidth = video.videoWidth || video.width;
-  const vHeight = video.videoHeight || video.height;
+  let vWidth = source.videoWidth;
+  let vHeight = source.videoHeight;
   if (!vWidth || !vHeight) {
-    animationId = requestAnimationFrame(renderLoop);
-    return;
+    vWidth = source.naturalWidth || source.width;
+    vHeight = source.naturalHeight || source.height;
   }
+  if (!vWidth || !vHeight) return;
 
   const aspect = vHeight / vWidth;
   const rows = Math.floor(cols * aspect * 0.55);
 
   sourceCanvas.width = cols;
   sourceCanvas.height = rows;
-  sourceCtx.drawImage(video, 0, 0, cols, rows);
+  sourceCtx.drawImage(source, 0, 0, cols, rows);
 
   const imageData = sourceCtx.getImageData(0, 0, cols, rows);
   const data = imageData.data;
@@ -151,28 +153,67 @@ function renderLoop() {
       asciiCtx.fillText(char, padX + x * fontSize, padY + y * fontSize);
     }
   }
+}
 
+function renderLoop() {
+  if (isPhoto) return;
+  if (video.paused || video.ended) {
+    animationId = requestAnimationFrame(renderLoop);
+    return;
+  }
+  renderAscii(video);
   animationId = requestAnimationFrame(renderLoop);
+}
+
+function renderPhoto() {
+  if (!isPhoto || !photoImage) return;
+  renderAscii(photoImage);
 }
 
 startBtn.addEventListener('click', startCamera);
 
-uploadBtn.addEventListener('click', () => videoUpload.click());
+uploadBtn.addEventListener('click', () => mediaUpload.click());
 
-videoUpload.addEventListener('change', (e) => {
+mediaUpload.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  isVideoFile = true;
+
+  const isImage = file.type.startsWith('image/');
   const url = URL.createObjectURL(file);
-  video.srcObject = null;
-  video.src = url;
-  video.loop = true;
-  video.play();
-  startRender();
+
+  if (isImage) {
+    if (animationId) cancelAnimationFrame(animationId);
+    animationId = null;
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    video.pause();
+    video.srcObject = null;
+    video.src = '';
+
+    const img = new Image();
+    img.onload = () => {
+      isPhoto = true;
+      photoImage = img;
+      showInterface();
+      renderPhoto();
+    };
+    img.src = url;
+  } else {
+    isPhoto = false;
+    photoImage = null;
+    video.srcObject = null;
+    video.src = url;
+    video.loop = true;
+    video.play();
+    showInterface();
+    renderLoop();
+  }
 });
 
 flipBtn.addEventListener('click', () => {
-  if (isVideoFile) return;
+  if (isPhoto) return;
   facingMode = facingMode === 'user' ? 'environment' : 'user';
   startCamera();
 });
@@ -199,7 +240,15 @@ toggleControls.addEventListener('click', () => {
   controls.classList.toggle('hidden', !controlsVisible);
 });
 
-// Close overlay on controls interaction if needed
+[resolutionInput, charsetSelect, colorModeSelect].forEach(el => {
+  el.addEventListener('input', () => {
+    if (isPhoto) renderPhoto();
+  });
+  el.addEventListener('change', () => {
+    if (isPhoto) renderPhoto();
+  });
+});
+
 overlay.addEventListener('click', (e) => {
   if (e.target === overlay) overlay.classList.remove('active');
 });
