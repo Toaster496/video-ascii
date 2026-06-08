@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>Video ASCII</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div id="app">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="sourceCanvas"></canvas>
+    <canvas id="asciiCanvas"></canvas>
+
+    <div id="overlay" class="active">
+      <h1>Video to ASCII</h1>
+      <p>Real-time ASCII art from your camera.</p>
+      <button id="startBtn" class="btn primary">Start Camera</button>
+      <button id="uploadBtn" class="btn">Upload Video</button>
+      <input type="file" id="videoUpload" accept="video/*" hidden>
+    </div>
+
+    <div id="controls" class="hidden">
+      <div class="control-group">
+        <label for="resolution">Resolution</label>
+        <input type="range" id="resolution" min="40" max="200" value="100">
+      </div>
+      <div class="control-group">
+        <label for="charset">Charset</label>
+        <select id="charset">
+          <option value="standard">Standard</option>
+          <option value="detailed">Detailed</option>
+          <option value="blocks">Blocks</option>
+          <option value="binary">Binary</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="colorMode">Color</label>
+        <select id="colorMode">
+          <option value="mono">Mono</option>
+          <option value="color">Color</option>
+          <option value="green">Matrix</option>
+        </select>
+      </div>
+      <button id="flipBtn" class="btn icon" title="Flip Camera">Flip</button>
+      <button id="fsBtn" class="btn icon" title="Fullscreen">Full</button>
+      <button id="snapshotBtn" class="btn icon" title="Snapshot">Snap</button>
+      <button id="stopBtn" class="btn icon close" title="Stop">Stop</button>
+    </div>
+
+    <button id="toggleControls" class="hidden">Controls</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
