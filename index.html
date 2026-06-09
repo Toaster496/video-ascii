@@ -14,6 +14,7 @@
     <canvas id="sourceCanvas"></canvas>
     <canvas id="asciiCanvas"></canvas>
     <canvas id="effectsCanvas"></canvas>
+    <div id="camcorderMask"></div>
 
     <div id="vhsOverlay">
       <div class="hud">
@@ -57,11 +58,18 @@
         </select>
       </div>
       <div class="control-group">
-        <label for="overlayMode">Effect</label>
+        <label for="renderMode">Render</label>
+        <select id="renderMode">
+          <option value="ascii">ASCII</option>
+          <option value="constellation">Constellation</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="overlayMode">Overlay</label>
         <select id="overlayMode">
           <option value="none">None</option>
           <option value="camcorder">Camcorder</option>
-          <option value="constellation">Constellation</option>
         </select>
       </div>
       <button id="recordBtn" class="btn icon" title="Record Video">Rec</button>
