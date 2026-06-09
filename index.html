@@ -13,6 +13,17 @@
     <video id="video" autoplay playsinline muted></video>
     <canvas id="sourceCanvas"></canvas>
     <canvas id="asciiCanvas"></canvas>
+    <canvas id="effectsCanvas"></canvas>
+
+    <div id="vhsOverlay">
+      <div class="hud">
+        <div>
+          <span id="recDot" class="rec-indicator hidden">● REC</span>
+          <span id="recordTimer"></span>
+        </div>
+        <div id="hudDate"></div>
+      </div>
+    </div>
 
     <div id="overlay" class="active">
       <h1>Video to ASCII</h1>
@@ -42,11 +53,21 @@
           <option value="mono">Mono</option>
           <option value="color">Color</option>
           <option value="green">Matrix</option>
+          <option value="sepia">Sepia</option>
         </select>
       </div>
+      <div class="control-group">
+        <label for="overlayMode">Effect</label>
+        <select id="overlayMode">
+          <option value="none">None</option>
+          <option value="camcorder">Camcorder</option>
+          <option value="constellation">Constellation</option>
+        </select>
+      </div>
+      <button id="recordBtn" class="btn icon" title="Record Video">Rec</button>
+      <button id="snapshotBtn" class="btn icon" title="Snapshot">Snap</button>
       <button id="flipBtn" class="btn icon" title="Flip Camera">Flip</button>
       <button id="fsBtn" class="btn icon" title="Fullscreen">Full</button>
-      <button id="snapshotBtn" class="btn icon" title="Snapshot">Snap</button>
       <button id="stopBtn" class="btn icon close" title="Stop">Stop</button>
     </div>
 
